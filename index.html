@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>TERMINAL_IA_SOLUCION_FINAL</title>
+    <style>
+        body { background: #050505; color: #00ff41; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #terminal { width: 90%; max-width: 750px; height: 80vh; border: 2px solid #00f3ff; background: #0a0a0f; display: flex; flex-direction: column; box-shadow: 0 0 20px #00f3ff; }
+        #chat { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 12px; border-radius: 4px; max-width: 80%; line-height: 1.4; font-size: 14px; }
+        .ai { border: 1px solid #ff00ff; background: rgba(255, 0, 255, 0.05); align-self: flex-start; color: white; }
+        .user { border: 1px solid #00f3ff; background: rgba(0, 243, 255, 0.05); align-self: flex-end; color: white; }
+        #input-area { padding: 15px; border-top: 1px solid #222; display: flex; gap: 10px; }
+        input { flex: 1; background: #000; border: 1px solid #00f3ff; color: #00ff41; padding: 10px; outline: none; font-family: inherit; }
+        button { background: #00f3ff; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="terminal">
+    <div style="padding:10px; background:#111; color:#00f3ff; font-size:11px;">ID: FLERIDA_PRO | STATUS: EMERGENCY_MODE</div>
+    <div id="chat">
+        <div class="msg ai">SISTEMA: He activado el túnel de emergencia. <br>Escribe algo y presiona ENVIAR.</div>
+    </div>
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Escribe aquí...">
+        <button onclick="enviar()">ENVIAR</button>
+    </div>
+</div>
+
+<script>
+    const API_KEY = "AIzaSyA1EkHRo3Gs1HfEXJWmCsF3hekoJKBXWZ4";
+
+    async function enviar() {
+        const input = document.getElementById('user-input');
+        const chat = document.getElementById('chat');
+        const text = input.value.trim();
+        if (!text) return;
+
+        // Render Usuario
+        const uDiv = document.createElement('div');
+        uDiv.className = 'msg user';
+        uDiv.innerText = text;
+        chat.appendChild(uDiv);
+        input.value = "";
+
+        // Burbuja de espera
+        const waitDiv = document.createElement('div');
+        waitDiv.className = 'msg ai';
+        waitDiv.innerText = "CONECTANDO CON EL NÚCLEO...";
+        chat.appendChild(waitDiv);
+        chat.scrollTop = chat.scrollHeight;
+
+        try {
+            // Usamos un proxy de prueba para saltar el error de seguridad (CORS)
+            const proxy = "https://corsproxy.io/?";
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+
+            const response = await fetch(proxy + encodeURIComponent(url), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ contents: [{ parts: [{ text: text }] }] })
+            });
+
+            const data = await response.json();
+            chat.removeChild(waitDiv);
+
+            if (data.candidates) {
+                const aDiv = document.createElement('div');
+                aDiv.className = 'msg ai';
+                aDiv.innerText = data.candidates[0].content.parts[0].text;
+                chat.appendChild(aDiv);
+            } else {
+                throw new Error();
+            }
+        } catch (e) {
+            waitDiv.innerText = "ERROR: El navegador sigue bloqueando la conexión. Instala la extensión 'Allow CORS' en Opera para finalizar.";
+            waitDiv.style.borderColor = "red";
+        }
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    document.getElementById('user-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') enviar(); });
+</script>
+</body>
+</html>
